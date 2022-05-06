@@ -1,15 +1,20 @@
 const express = require("express");
+const bodyParser = require("body-parser");
 const app = express();
 const PORT = 8080;
 
 function generateRandomString() {
-  
-}
-
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
+  let results = "";
+  for (let i = 0; i < 6; i++) {
+    const randomCharCode = Math.floor(Math.random() * 26 + 97);
+    const randomChar = String.fromCharCode(randomCharCode);
+    results += randomChar;
+  }
+  return results;
+};
 
 app.set("view engine", "ejs");
+app.use(bodyParser.urlencoded({extended: true}));
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
