@@ -2,6 +2,13 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 
+function generateRandomString() {
+  
+}
+
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({extended: true}));
+
 app.set("view engine", "ejs");
 
 const urlDatabase = {
@@ -34,6 +41,11 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
+});
+
+app.post("/urls", (req, res) => {
+  console.log(req.body); 
+  res.send("Ok");
 });
 
 app.listen(PORT, () => {
