@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const { render } = require("ejs");
 const app = express();
 const PORT = 8080;
 
@@ -51,8 +52,11 @@ app.get("/urls.json", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   const { shortURL } = req.params;
   const longURL = urlDatabase[shortURL];
-  console.log(longURL);
   res.redirect(longURL);
+  if (!shortURL) {
+    const errorMessage = "Invalid Short URL";
+    res.status(404).render("urls_error", errorMessage);
+  };
 });
 
 app.post("/urls", (req, res) => {
