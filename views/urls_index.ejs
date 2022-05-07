@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <title>TinyApp</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
-  <title>TinyApp</title>
 </head>
 <body>
-  <head>
-    <%- include('partials/_header') %>
-  </head>
+  <%- include('partials/_header') %>
 
   <main style="margin: 1em;">
     <h3>My URLs</h3>
@@ -23,13 +21,14 @@
           <th scope="col">Delete</th>
         </tr>
       </thead>
+      
       <tbody>
         <% for(let url in urls) { %>
           <tr>
             <td><%= url %></td>
             <td><%= urls[url] %></td>
             <td>
-              <form method="POST" action="/urls/<% url %>/delete?_method=DELETE">
+              <form method="POST" action="/urls/<%= url %>/delete">
                 <button type="submit" class="btn btn-outline-danger">Delete</button>
               </form>
             </td>
