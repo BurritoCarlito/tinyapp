@@ -39,11 +39,26 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+// renders individual URL details
 app.get("/urls/:shortURL", (req, res) => {
   const { shortURL } = req.params;
-  const templateVars = { shortURL: shortURL, longURL: urlDatabase[shortURL] };
+
+  const urlObj = urlDatabase[shortURL];
+  if (!urlObj) {
+    const templateVars = {
+      status: 404,
+      message: "Invalid URL"
+    };
+    return res.status(404).render("urls_error", templateVars);
+  };
+
+  const templateVars = { 
+    shortURL: shortURL,
+    longURL: urlDatabase[shortURL] 
+  };
   res.render("urls_show", templateVars);
 });
+
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
@@ -51,12 +66,17 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   const { shortURL } = req.params;
-  const longURL = urlDatabase[shortURL];
-  res.redirect(longURL);
-  if (!shortURL) {
-    const errorMessage = "Invalid Short URL";
-    res.status(404).render("urls_error", errorMessage);
+
+  const urlObj = urlDatabase[shortURL];
+  if (!urlObj) {
+    const templateVars = {
+      status: 404,
+      message: "Invalid URL"
+    };
+    return res.status(404).render("urls_error", templateVars);
   };
+
+  res.status(302).redirect(urlObj);
 });
 
 app.post("/urls", (req, res) => {
@@ -65,6 +85,23 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = req.body.longURL;
   console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`);
+});
+
+// Delete 
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const { shortURL } = req.params;
+
+  const urlObj = urlDatabase[shortURL];
+  if (!urlObj) {
+    const templateVars = {
+      status: 204,
+      message: "Invalid URL"
+    };
+    return res.status(404).render("urls_error", templateVars);
+  };
+
+  delete urlDatabase[shortURL];
+  res.status(301).redirect("/urls");
 });
 
 app.listen(PORT, () => {
