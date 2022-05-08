@@ -15,6 +15,7 @@ function generateRandomString() {
   return results;
 };
 
+
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
@@ -35,12 +36,18 @@ app.get("/", (req, res) => {
 
 //gets a route for urls index page
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { 
+    urls: urlDatabase,
+    username: req.cookies.username
+  };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {
+    username: req.cookies.username
+  };
+  res.render("urls_new", templateVars);
 });
 
 // renders individual URL details
@@ -58,7 +65,8 @@ app.get("/urls/:shortURL", (req, res) => {
 
   const templateVars = { 
     shortURL: shortURL,
-    longURL: urlDatabase[shortURL] 
+    longURL: urlDatabase[shortURL], 
+    username: req.cookies.username
   };
   res.render("urls_show", templateVars);
 });
@@ -126,11 +134,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.status(301).redirect("/urls");
 });
 
-//Login 
+//Login
 app.post("/login", (req, res) => {
-  console.log(req.body);
   res.cookie("username", req.body.username);
-  res.redirect("/urls")
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
