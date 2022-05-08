@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 const { render } = require("ejs");
 const app = express();
 const PORT = 8080;
@@ -16,6 +17,7 @@ function generateRandomString() {
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -124,6 +126,12 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.status(301).redirect("/urls");
 });
 
+//Login 
+app.post("/login", (req, res) => {
+  console.log(req.body);
+  res.cookie("username", req.body.username);
+  res.redirect("/urls")
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
