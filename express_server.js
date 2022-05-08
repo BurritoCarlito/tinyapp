@@ -26,10 +26,12 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+// server sends a response
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+//gets a route for urls index page
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
@@ -59,11 +61,12 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-
+//server sends a JSON response
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+// routes you to the longURL site
 app.get("/u/:shortURL", (req, res) => {
   const { shortURL } = req.params;
 
@@ -87,6 +90,23 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+//Edit the longURL when submitting an new URL
+app.post("/urls/:shortURL", (req, res) => {
+  const { shortURL } = req.params;
+
+  // const urlObj = urlDatabase[shortURL];
+  // if (!urlObj) {
+  //   const templateVars = {
+  //     status: 204,
+  //     message: "Invalid URL"
+  //   };
+  //   return res.status(404).render("urls_error", templateVars);
+  // };
+
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect("/urls");
+});
+
 // Delete 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const { shortURL } = req.params;
@@ -103,6 +123,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[shortURL];
   res.status(301).redirect("/urls");
 });
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
