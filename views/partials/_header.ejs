@@ -17,7 +17,10 @@
       <button type="submit" style="width: 100px" class="btn btn-primary">Login</button>
     </form>
     <% } else { %>
-      <p>Logged In As: <%= username %>!</p>
+      <form action="/logout" method="POST">
+        <label>Logged in as: <%= username %>!</label>
+        <button type="submit" style="width: 100px" class="btn btn-primary">Logout</button>
+      </form>
     <% } %>
   </nav>
 </header>
