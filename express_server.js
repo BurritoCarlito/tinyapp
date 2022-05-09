@@ -5,6 +5,8 @@ const { render } = require("ejs");
 const app = express();
 const PORT = 8080;
 
+
+// helper function 
 function generateRandomString() {
   let results = "";
   for (let i = 0; i < 6; i++) {
@@ -15,13 +17,14 @@ function generateRandomString() {
   return results;
 };
 
-function createNewUser(req, res) {
+// helper function 
+function createNewUser(req) {
   const email = req.body.email;
   const password = req.body.password;
 
-  if (!email || !password) {
-    res.status(400).send("Email and/or Password fields cannot be empty");
-    } else {
+  // if (!email || !password) {
+  //   res.status(400).send("Email and/or Password fields cannot be empty");
+  //   } else {
     const ID = generateRandomString();
     users[ID] = { 
       id: ID,
@@ -29,20 +32,21 @@ function createNewUser(req, res) {
       password: password
     };
     return users[ID];
-  }
 };
 
+// helper function 
 function checkEmailExists(newEmail) {
   for (let user in users) {
     if (users[user].email === newEmail) {
-      return false;
+      return users[user];
     }
   }
-  return true;
+  return false;
 };
 
-function checkPassword(user, newPasword) {
-  if (user.password === newPasword) {
+// helper function 
+function checkPassword(users, newPasword) {
+  if (users.password === newPasword) {
     return true;
   } else {
     return false;
@@ -203,13 +207,30 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.status(301).redirect("/urls");
 });
 
+//Registering a new User
+app.post("/register", (req, res) => {
+  const user = checkEmailExists(req.body.email);
+  if (user) {
+    res.status(400).send("Email has already been taken, please use a different email.");
+    // const templateVars = {
+    //   status: 400,
+    //   message: "Email already being used, please try another email"
+    // };
+
+  } else {
+    const newUser = createNewUser(req);
+    res.cookie("user_id", newUser.id);
+    res.redirect("/urls");
+  }
+});
+
 //Login
 app.post("/login", (req, res) => {
   const user = checkEmailExists(req.body.email);
   const correctPassword = checkPassword(user, req.body.password);
   if (user) {
     if (correctPassword) {
-      res.cookie("user_id", req.body["user_id"]);
+      res.cookie("user_id", user.id);
       res.redirect("/urls");
     } else {
       res.status(403).send("Password is Incorrect, please try again");
@@ -225,23 +246,7 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
-//Registering a new User
-app.post("/register", (req, res) => {
-  const verifyEmail = checkEmailExists(req.body.email);
-  if (!verifyEmail) {
-    // const templateVars = {
-    //   status: 400,
-    //   message: "Email already being used, please try another email"
-    // };
-    res.status(400).send("Email has already been taken, please use a different email.");
-  } else {
-    const newUser = createNewUser(req, res);
-    res.cookie("user_id", newUser.id);
-    res.redirect("/urls");
-  }
-});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
