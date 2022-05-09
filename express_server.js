@@ -41,6 +41,14 @@ function checkEmailExists(newEmail) {
   return true;
 };
 
+function checkPassword(user, newPasword) {
+  if (user.password === newPasword) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
@@ -197,8 +205,18 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //Login
 app.post("/login", (req, res) => {
-  res.cookie("user_id", req.body["user_id"]);
-  res.redirect("/urls");
+  const user = checkEmailExists(req.body.email);
+  const correctPassword = checkPassword(user, req.body.password);
+  if (user) {
+    if (correctPassword) {
+      res.cookie("user_id", req.body["user_id"]);
+      res.redirect("/urls");
+    } else {
+      res.status(403).send("Password is Incorrect, please try again");
+    }
+  } else {
+    res.status(403).send("Email cannot be found, please try again");
+  }
 });
 
 //Logout
