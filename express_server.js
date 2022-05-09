@@ -25,6 +25,8 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {}
+
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
@@ -78,7 +80,10 @@ app.get("/urls.json", (req, res) => {
 
 // routes you to the longURL site
 app.get("/u/:shortURL", (req, res) => {
-  const { shortURL } = req.params;
+  const { shortURL } = req.params.shortURL;
+  const templateVars = {
+    username: req.cookies.username
+  };
 
   const urlObj = urlDatabase[shortURL];
   if (!urlObj) {
@@ -89,7 +94,14 @@ app.get("/u/:shortURL", (req, res) => {
     return res.status(404).render("urls_error", templateVars);
   };
 
-  res.status(302).redirect(urlObj);
+  res.status(302).redirect(urlObj, templateVars);
+});
+
+app.get("/register", (req, res) => {
+  const templateVars = {
+    username: req.cookies.username
+  };
+  res.render("register", templateVars);
 });
 
 app.post("/urls", (req, res) => {
@@ -120,15 +132,15 @@ app.post("/urls/:shortURL", (req, res) => {
 // Delete 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const { shortURL } = req.params;
-
-  const urlObj = urlDatabase[shortURL];
-  if (!urlObj) {
-    const templateVars = {
-      status: 204,
-      message: "Invalid URL"
-    };
-    return res.status(404).render("urls_error", templateVars);
-  };
+  
+  // const urlObj = urlDatabase[shortURL];
+  // if (!urlObj) {
+  //   const templateVars = {
+  //     status: 204,
+  //     message: "Invalid URL"
+  //   };
+  //   return res.status(404).render("urls_error", templateVars);
+  // };
 
   delete urlDatabase[shortURL];
   res.status(301).redirect("/urls");
@@ -143,6 +155,16 @@ app.post("/login", (req, res) => {
 //Logout
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
+  res.redirect("/urls");
+});
+
+//Registering a new User
+app.post("/register", (req, res) => {
+  const id = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
+  users[id] = { id, email, password };
+  res.cookie("user_id", id);
   res.redirect("/urls");
 });
 
