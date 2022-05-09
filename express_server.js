@@ -15,6 +15,31 @@ function generateRandomString() {
   return results;
 };
 
+function createNewUser(req, res) {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (!email || !password) {
+    res.status(400).send("Email and/or Password fields cannot be empty");
+    } else {
+    const ID = generateRandomString();
+    users[ID] = { 
+      id: ID,
+      email: email,
+      password: password
+    };
+    return users[ID];
+  }
+};
+
+function checkEmailExists(newEmail) {
+  for (let user in users) {
+    if (users[user].email === newEmail) {
+      return false;
+    }
+  }
+  return true;
+};
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -25,7 +50,7 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const users = {}
+const users = {};
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
@@ -38,17 +63,22 @@ app.get("/", (req, res) => {
 
 //gets a route for urls index page
 app.get("/urls", (req, res) => {
+
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies.username
+    userID: req.cookies["user_id"],
+    user: users[req.cookies["user_id"]]
   };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+
   const templateVars = {
-    username: req.cookies.username
+    userID: req.cookies["user_id"],
+    user: users[req.cookies["user_id"]]
   };
+
   res.render("urls_new", templateVars);
 });
 
@@ -68,8 +98,9 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { 
     shortURL: shortURL,
     longURL: urlDatabase[shortURL], 
-    username: req.cookies.username
+    user: req.cookies.user
   };
+
   res.render("urls_show", templateVars);
 });
 
@@ -78,11 +109,12 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-// routes you to the longURL site
+// GET endpoint - to longURLS
 app.get("/u/:shortURL", (req, res) => {
   const { shortURL } = req.params.shortURL;
+
   const templateVars = {
-    username: req.cookies.username
+    user: req.cookies.user
   };
 
   const urlObj = urlDatabase[shortURL];
@@ -91,17 +123,34 @@ app.get("/u/:shortURL", (req, res) => {
       status: 404,
       message: "Invalid URL"
     };
+
     return res.status(404).render("urls_error", templateVars);
   };
 
   res.status(302).redirect(urlObj, templateVars);
 });
 
+//GET endpoint - request to /register 
 app.get("/register", (req, res) => {
+
   const templateVars = {
-    username: req.cookies.username
+    user_id: req.cookies["user_id"],
+    user: users[req.cookies["user_id"]]
   };
+
   res.render("register", templateVars);
+});
+
+
+// GET endpoint - request to /login
+app.get("/login", (req, res) => {
+
+  const templateVars = {
+    user_id: req.cookies["user_id"],
+    user: users[req.cookies["user_id"]]
+  };
+
+  res.render("login", templateVars);
 });
 
 app.post("/urls", (req, res) => {
@@ -148,24 +197,30 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //Login
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
+  res.cookie("user_id", req.body["user_id"]);
   res.redirect("/urls");
 });
 
 //Logout
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
 //Registering a new User
 app.post("/register", (req, res) => {
-  const id = generateRandomString();
-  const email = req.body.email;
-  const password = req.body.password;
-  users[id] = { id, email, password };
-  res.cookie("user_id", id);
-  res.redirect("/urls");
+  const verifyEmail = checkEmailExists(req.body.email);
+  if (!verifyEmail) {
+    // const templateVars = {
+    //   status: 400,
+    //   message: "Email already being used, please try another email"
+    // };
+    res.status(400).send("Email has already been taken, please use a different email.");
+  } else {
+    const newUser = createNewUser(req, res);
+    res.cookie("user_id", newUser.id);
+    res.redirect("/urls");
+  }
 });
 
 app.listen(PORT, () => {
