@@ -6,7 +6,7 @@ const app = express();
 const PORT = 8080;
 
 
-// helper function 
+// helper function
 function generateRandomString() {
   let results = "";
   for (let i = 0; i < 6; i++) {
@@ -15,9 +15,9 @@ function generateRandomString() {
     results += randomChar;
   }
   return results;
-};
+}
 
-// helper function 
+// helper function
 function createNewUser(req) {
   const email = req.body.email;
   const password = req.body.password;
@@ -25,16 +25,16 @@ function createNewUser(req) {
   // if (!email || !password) {
   //   res.status(400).send("Email and/or Password fields cannot be empty");
   //   } else {
-    const ID = generateRandomString();
-    users[ID] = { 
-      id: ID,
-      email: email,
-      password: password
-    };
-    return users[ID];
-};
+  const ID = generateRandomString();
+  users[ID] = {
+    id: ID,
+    email: email,
+    password: password
+  };
+  return users[ID];
+}
 
-// helper function 
+// helper function
 function checkEmailExists(newEmail) {
   for (let user in users) {
     if (users[user].email === newEmail) {
@@ -42,16 +42,16 @@ function checkEmailExists(newEmail) {
     }
   }
   return false;
-};
+}
 
-// helper function 
+// helper function
 function checkPassword(users, newPasword) {
   if (users.password === newPasword) {
     return true;
   } else {
     return false;
   }
-};
+}
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -76,7 +76,7 @@ app.get("/", (req, res) => {
 //gets a route for urls index page
 app.get("/urls", (req, res) => {
 
-  const templateVars = { 
+  const templateVars = {
     urls: urlDatabase,
     userID: req.cookies["user_id"],
     user: users[req.cookies["user_id"]]
@@ -105,11 +105,11 @@ app.get("/urls/:shortURL", (req, res) => {
       message: "Invalid URL"
     };
     return res.status(404).render("urls_error", templateVars);
-  };
+  }
 
-  const templateVars = { 
+  const templateVars = {
     shortURL: shortURL,
-    longURL: urlDatabase[shortURL], 
+    longURL: urlDatabase[shortURL],
     user: req.cookies.user
   };
 
@@ -137,12 +137,12 @@ app.get("/u/:shortURL", (req, res) => {
     };
 
     return res.status(404).render("urls_error", templateVars);
-  };
+  }
 
   res.status(302).redirect(urlObj, templateVars);
 });
 
-//GET endpoint - request to /register 
+//GET endpoint - request to /register
 app.get("/register", (req, res) => {
 
   const templateVars = {
@@ -166,10 +166,8 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); 
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
-  console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -190,7 +188,7 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect("/urls");
 });
 
-// Delete 
+// Delete
 app.post("/urls/:shortURL/delete", (req, res) => {
   const { shortURL } = req.params;
   
