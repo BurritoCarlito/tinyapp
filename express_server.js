@@ -12,11 +12,11 @@ app.use(cookieParser());
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
-    userID: "example@ex.com"
+    userID: "bob"
   },
   "9sm5xK": {
     longURL: "http://www.google.com",
-    userID: "example1@ex.com"
+    userID: "bill"
   }
 };
 
@@ -38,9 +38,6 @@ function createNewUser(req) {
   const email = req.body.email;
   const password = req.body.password;
 
-  // if (!email || !password) {
-  //   res.status(400).send("Email and/or Password fields cannot be empty");
-  //   } else {
   const ID = generateRandomString();
   users[ID] = {
     id: ID,
@@ -70,17 +67,14 @@ function checkPassword(users, newPasword) {
 }
 
 // helper function
-function urlOnlyForUser(id) {
-  const urls = {};
+function urlsForUser(userID, urlDatabase) {
+  const usersURL = {};
   for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      urls[url] = {};
-      urls[url] = urlDatabase[url];
-      console.log("helper", urlDatabase[url].userID)
-      console.log("helper1", urls[url].userID)
+    if (urlDatabase[url].userID === userID) {
+      usersURL[url] = urlDatabase[url];
     }
   }
-  return urls;
+  return usersURL;
 }
 
 
@@ -98,27 +92,33 @@ app.get("/", (req, res) => {
 
 //gets a route for urls index page
 app.get("/urls", (req, res) => {
-  const urls = urlOnlyForUser(req.cookies["user_id"]);
-  const templateVars = {
-    urls: urls,
-    userID: req.cookies["user_id"],
-    user: users[req.cookies["user_id"]],
-  };
-  
-  res.render("urls_index", templateVars);
+  const userID = req.cookies["user_id"];
+  const user = users[userID];
+  if (!user) {
+    res.status(400).send("Please login to gain access.")
+  } else {
+    const templateVars = {
+      urls: urlsForUser(userID, urlDatabase),
+      userID: req.cookies["user_id"],
+      user: users[req.cookies["user_id"]],
+    };
+    res.render("urls_index", templateVars);
+  }
 });
 
 // GET route for the creating a new shortURL page
 app.get("/urls/new", (req, res) => {
-  const {shortURL } = req.params;
-
-  const templateVars = {
-    urls: urlDatabase,
-    userID: req.cookies["user_id"],
-    user: users[req.cookies["user_id"]]
-
-  };
-  res.render("urls_new", templateVars);
+  const userID = req.cookies["user_id"];
+  if (userID) {
+    const templateVars = {
+      urls: urlDatabase,
+      userID: req.cookies["user_id"],
+      user: users[req.cookies["user_id"]]
+    };
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect("/login");
+  }
 });
 
 // renders individual URL details
@@ -131,17 +131,8 @@ app.get("/urls/:shortURL", (req, res) => {
     longURL: urlDatabase[shortURL].longURL,
     user: users[req.cookies["user_id"]],
     userID: req.cookies["user_id"],
-    status: 400,
-    message: "No Access! Only able to view URL's you have created"
   };
-
-  if (urlDatabase[req.params.shortURL].userID === userID) {
     res.render("urls_show", templateVars);
-  } else {
-    res.status(400).redirect("urls_error", templateVars);
-  }
-
-
 });
 
 //server sends a JSON response
@@ -152,14 +143,14 @@ app.get("/urls.json", (req, res) => {
 // GET endpoint - redirects to longURLS
 app.get("/u/:shortURL", (req, res) => {
   if (!urlDatabase[req.params.shortURL]) {
-    const templateVars = {
-      status: 404,
-      message: "Invalid shortURL ID"
-    }
-    res.status(302).render("urls_error", templateVars)
+    res.status(400).send("shortURL does not exist.")
   } else {
+    if (urlDatabase[req.params.shortURL].userID === req.cookies["user_id"]) {
     const longURL = urlDatabase[req.params.shortURL].longURL;
     res.redirect(longURL);
+  } else {
+    res.status(400).send("Access Denied, only able to view URL that you have created");
+    }
   }
 });
 
@@ -238,18 +229,14 @@ app.post("/u/:shortURL", (req, res) => {
 
 // Delete
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const { shortURL } = req.params.shortURL;
-  const { userID } = req.cookies["user_id"];
+  const shortURL = req.params.shortURL;
+  const userID = req.cookies["user_id"];
 
-  if (urlDatabase[req.params.shortURL].userID === userID) {
-    if (!urlDatabase[shortURL]) {
-      res.status(400).send("The URL does not exist, please try again.");
+  if (userID !== urlDatabase[shortURL].userID) {
+      res.status(403).send("You are not logged in. Please log in to edit.");
     } else {
       delete urlDatabase[shortURL];
       res.status(301).redirect("/urls");
-    }
-  } else {
-    res.status(400).send("Unable to edit URL, please log in.")
   }
 });
 
