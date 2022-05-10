@@ -12,11 +12,11 @@ app.use(cookieParser());
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
-    userID: "Ian"
+    userID: "example@ex.com"
   },
   "9sm5xK": {
     longURL: "http://www.google.com",
-    userID: "Carlo"
+    userID: "example1@ex.com"
   }
 };
 
@@ -124,23 +124,24 @@ app.get("/urls/new", (req, res) => {
 // renders individual URL details
 app.get("/urls/:shortURL", (req, res) => {
   const { shortURL } = req.params;
-
-  const urlObj = urlDatabase[shortURL];
-  if (!urlObj) {
-    const templateVars = {
-      status: 404,
-      message: "Invalid URL"
-    };
-    return res.status(404).render("urls_error", templateVars);
-  }
+  const { userID } = req.cookies["user_id"];
 
   const templateVars = {
     shortURL: shortURL,
     longURL: urlDatabase[shortURL].longURL,
-    user: req.cookies.user
+    user: users[req.cookies["user_id"]],
+    userID: req.cookies["user_id"],
+    status: 400,
+    message: "No Access! Only able to view URL's you have created"
   };
 
-  res.render("urls_show", templateVars);
+  if (urlDatabase[req.params.shortURL].userID === userID) {
+    res.render("urls_show", templateVars);
+  } else {
+    res.status(400).redirect("urls_error", templateVars);
+  }
+
+
 });
 
 //server sends a JSON response
@@ -185,11 +186,17 @@ app.get("/login", (req, res) => {
   res.render("login", templateVars);
 });
 
+
+
 /*-- POST REQUESTS --*/
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+  longURL = req.body.longURL;
+  const userID = req.cookies["user_id"];
+  urlDatabase[shortURL] = {};
+  urlDatabase[shortURL].longURL = longURL;
+  urlDatabase[shortURL].userID = userID;
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -197,19 +204,19 @@ app.post("/urls", (req, res) => {
 //Edit the longURL when submitting an new URL
 app.post("/urls/:shortURL", (req, res) => {
   const { shortURL } = req.params;
+  const { userID } = req.cookies["user_id"];
+  const { longURL } = req.params.shortURL;
 
-  // const urlObj = urlDatabase[shortURL];
-  // if (!urlObj) {
-  //   const templateVars = {
-  //     status: 204,
-  //     message: "Invalid URL"
-  //   };
-  //   return res.status(404).render("urls_error", templateVars);
-  // };
-
-  
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect("/urls");
+  if (urlDatabase[req.params.shortURL].userID === userID) {
+    if (!urlDatabase[shortURL]) {
+      res.status(400).send("The URL does not exist, please try again.");
+    } else {
+      urlDatabase[shortURL].longURL = longURL;
+      res.redirect("/urls");
+    }
+  } else {
+    res.status(400).send("Unable to edit URL, please log in.")
+  }
 });
 
 //Edit the longURL when submitting an new URL
@@ -231,19 +238,19 @@ app.post("/u/:shortURL", (req, res) => {
 
 // Delete
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const { shortURL } = req.params;
-  
-  // const urlObj = urlDatabase[shortURL];
-  // if (!urlObj) {
-  //   const templateVars = {
-  //     status: 204,
-  //     message: "Invalid URL"
-  //   };
-  //   return res.status(404).render("urls_error", templateVars);
-  // };
+  const { shortURL } = req.params.shortURL;
+  const { userID } = req.cookies["user_id"];
 
-  delete urlDatabase[shortURL];
-  res.status(301).redirect("/urls");
+  if (urlDatabase[req.params.shortURL].userID === userID) {
+    if (!urlDatabase[shortURL]) {
+      res.status(400).send("The URL does not exist, please try again.");
+    } else {
+      delete urlDatabase[shortURL];
+      res.status(301).redirect("/urls");
+    }
+  } else {
+    res.status(400).send("Unable to edit URL, please log in.")
+  }
 });
 
 //Registering a new User
@@ -251,10 +258,6 @@ app.post("/register", (req, res) => {
   const user = checkEmailExists(req.body.email);
   if (user) {
     res.status(400).send("Email has already been taken, please use a different email.");
-    // const templateVars = {
-    //   status: 400,
-    //   message: "Email already being used, please try another email"
-    // };
 
   } else {
     const newUser = createNewUser(req);
