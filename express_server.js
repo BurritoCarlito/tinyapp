@@ -5,6 +5,22 @@ const { render } = require("ejs");
 const app = express();
 const PORT = 8080;
 
+app.set("view engine", "ejs");
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
+
+const urlDatabase = {
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "Ian"
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "Carlo"
+  }
+};
+
+const users = {};
 
 // helper function
 function generateRandomString() {
@@ -53,16 +69,8 @@ function checkPassword(users, newPasword) {
   }
 }
 
-app.set("view engine", "ejs");
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+// helper function
 
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
-
-const users = {};
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
@@ -79,8 +87,10 @@ app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
     userID: req.cookies["user_id"],
-    user: users[req.cookies["user_id"]]
+    user: users[req.cookies["user_id"]],
   };
+  
+  console.log("urlDatabase", urlDatabase)
   res.render("urls_index", templateVars);
 });
 
@@ -109,7 +119,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
   const templateVars = {
     shortURL: shortURL,
-    longURL: urlDatabase[shortURL],
+    longURL: urlDatabase[shortURL].longURL,
     user: req.cookies.user
   };
 
@@ -171,6 +181,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+
 //Edit the longURL when submitting an new URL
 app.post("/urls/:shortURL", (req, res) => {
   const { shortURL } = req.params;
@@ -184,7 +195,25 @@ app.post("/urls/:shortURL", (req, res) => {
   //   return res.status(404).render("urls_error", templateVars);
   // };
 
+  
   urlDatabase[shortURL] = req.body.longURL;
+  res.redirect("/urls");
+});
+
+//Edit the longURL when submitting an new URL
+app.post("/u/:shortURL", (req, res) => {
+  const { shortURL } = req.params;
+
+  const urlObj = urlDatabase[shortURL];
+  if (!urlObj) {
+    const templateVars = {
+      status: 204,
+      message: "Invalid URL"
+    };
+    return res.status(404).render("urls_error", templateVars);
+  };
+
+  urlDatabase[shortURL].longURL = req.body.longURL;
   res.redirect("/urls");
 });
 
