@@ -70,7 +70,22 @@ function checkPassword(users, newPasword) {
 }
 
 // helper function
+function urlOnlyForUser(id) {
+  const urls = {};
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === id) {
+      urls[url] = {};
+      urls[url] = urlDatabase[url];
+      console.log("helper", urlDatabase[url].userID)
+      console.log("helper1", urls[url].userID)
+    }
+  }
+  return urls;
+}
 
+
+
+/*-- GET REQUESTS --*/
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
@@ -83,24 +98,26 @@ app.get("/", (req, res) => {
 
 //gets a route for urls index page
 app.get("/urls", (req, res) => {
-
+  const urls = urlOnlyForUser(req.cookies["user_id"]);
   const templateVars = {
-    urls: urlDatabase,
+    urls: urls,
     userID: req.cookies["user_id"],
     user: users[req.cookies["user_id"]],
   };
   
-  console.log("urlDatabase", urlDatabase)
   res.render("urls_index", templateVars);
 });
 
+// GET route for the creating a new shortURL page
 app.get("/urls/new", (req, res) => {
+  const {shortURL } = req.params;
 
   const templateVars = {
+    urls: urlDatabase,
     userID: req.cookies["user_id"],
     user: users[req.cookies["user_id"]]
-  };
 
+  };
   res.render("urls_new", templateVars);
 });
 
@@ -131,25 +148,18 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-// GET endpoint - to longURLS
+// GET endpoint - redirects to longURLS
 app.get("/u/:shortURL", (req, res) => {
-  const { shortURL } = req.params.shortURL;
-
-  const templateVars = {
-    user: req.cookies.user
-  };
-
-  const urlObj = urlDatabase[shortURL];
-  if (!urlObj) {
+  if (!urlDatabase[req.params.shortURL]) {
     const templateVars = {
       status: 404,
-      message: "Invalid URL"
-    };
-
-    return res.status(404).render("urls_error", templateVars);
+      message: "Invalid shortURL ID"
+    }
+    res.status(302).render("urls_error", templateVars)
+  } else {
+    const longURL = urlDatabase[req.params.shortURL].longURL;
+    res.redirect(longURL);
   }
-
-  res.status(302).redirect(urlObj, templateVars);
 });
 
 //GET endpoint - request to /register
@@ -174,6 +184,8 @@ app.get("/login", (req, res) => {
 
   res.render("login", templateVars);
 });
+
+/*-- POST REQUESTS --*/
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
