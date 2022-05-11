@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const { render } = require("ejs");
+const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080;
 
@@ -12,11 +13,13 @@ app.use(cookieParser());
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
-    userID: "bob"
+    userID: "bob",
+    password: "purple-monkey-dinosaur"
   },
   "9sm5xK": {
     longURL: "http://www.google.com",
-    userID: "bill"
+    userID: "bill",
+    password: "blue-dinosaur-monkey"
   }
 };
 
@@ -37,34 +40,41 @@ function generateRandomString() {
 function createNewUser(req) {
   const email = req.body.email;
   const password = req.body.password;
-
+  const hashedPassword = bcrypt.hashSync(password, 10);
   const ID = generateRandomString();
   users[ID] = {
     id: ID,
     email: email,
-    password: password
+    hasedPassword: hashedPassword
   };
+  console.log("helper", users[ID]);
   return users[ID];
 }
+
 
 // helper function
 function checkEmailExists(newEmail) {
   for (let user in users) {
-    if (users[user].email === newEmail) {
+    if (users[user]["email"] === newEmail) {
       return users[user];
     }
   }
   return false;
 }
 
-// helper function
-function checkPassword(users, newPasword) {
-  if (users.password === newPasword) {
-    return true;
-  } else {
-    return false;
-  }
+// function findUser (newEmail, users)  {
+//   for (let user in users) {
+//     if (users[user].email === newEmail) {
+//       return users[user];
+//     }
+//   }
+//   return false;
+// }
+
+function checkPassword(users, newPassword) {
+  return bcrypt.compareSync(newPassword, users.hashedPassword);
 }
+
 
 // helper function
 function urlsForUser(userID, urlDatabase) {
@@ -229,8 +239,8 @@ app.post("/u/:shortURL", (req, res) => {
 
 // Delete
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const shortURL = req.params.shortURL;
-  const userID = req.cookies["user_id"];
+  const { shortURL } = req.params.shortURL;
+  const { userID } = req.cookies["user_id"];
 
   if (userID !== urlDatabase[shortURL].userID) {
       res.status(403).send("You are not logged in. Please log in to edit.");
@@ -242,7 +252,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //Registering a new User
 app.post("/register", (req, res) => {
-  const user = checkEmailExists(req.body.email);
+  const { user } = checkEmailExists(req.body.email);
   if (user) {
     res.status(400).send("Email has already been taken, please use a different email.");
 
@@ -255,7 +265,7 @@ app.post("/register", (req, res) => {
 
 //Login
 app.post("/login", (req, res) => {
-  const user = checkEmailExists(req.body.email);
+  const user = checkEmailExists(req.body.email, users);
   const correctPassword = checkPassword(user, req.body.password);
   if (user) {
     if (correctPassword) {
@@ -272,7 +282,7 @@ app.post("/login", (req, res) => {
 //Logout
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 
