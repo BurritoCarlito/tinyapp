@@ -5,6 +5,13 @@ const { render } = require("ejs");
 const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = 8080;
+const {
+  generateRandomString,
+  getUsersByEmail,
+  urlsForUser
+} = require("./helpers");
+
+const users = {};
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -27,79 +34,27 @@ const urlDatabase = {
   }
 };
 
-const users = {};
-
-// helper function
-function generateRandomString() {
-  let results = "";
-  for (let i = 0; i < 6; i++) {
-    const randomCharCode = Math.floor(Math.random() * 26 + 97);
-    const randomChar = String.fromCharCode(randomCharCode);
-    results += randomChar;
-  }
-  return results;
-}
-
-// helper function
-function createNewUser(req) {
-  const email = req.body.email;
-  const password = req.body.password;
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  const ID = generateRandomString();
-  users[ID] = {
-    id: ID,
-    email: email,
-    hashedPassword: hashedPassword
-  };
-  return users[ID];
-}
-
-// helper function
-function getUsersByEmail(email, users) {
-  for (let user in users) {
-    if (users[user]["email"] === email) {
-      return users[user];
-    }
-  }
-  return false;
-}
-
-function checkPassword(users, newPassword) {
-  return bcrypt.compare(newPassword, users.password);
-}
-
-// helper function
-function urlsForUser(userID, urlDatabase) {
-  const usersURL = {};
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === userID) {
-      usersURL[url] = urlDatabase[url];
-    }
-  }
-  return usersURL;
-}
-
-
-
-/*-- GET REQUESTS --*/
-
 app.get("/hello", (req, res) => {
+  
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 // server sends a response
 app.get("/", (req, res) => {
+
   res.send("Hello!");
 });
 
 //gets a route for urls index page
 app.get("/urls", (req, res) => {
   const urls = urlsForUser(req.session.user_id, urlDatabase);
+
     const templateVars = {
       userID: req.session.user_id,
       urls: urls,
       user: users[req.session.user_id]
     };
+
     res.render("urls_index", templateVars);
 });
 
@@ -174,8 +129,6 @@ app.get("/login", (req, res) => {
   res.render("login", templateVars);
 });
 
-
-
 /*-- POST REQUESTS --*/
 
 app.post("/urls", (req, res) => {
@@ -184,7 +137,8 @@ app.post("/urls", (req, res) => {
   const userID = req.session.user_id;
   urlDatabase[shortURL] = {};
   urlDatabase[shortURL].longURL = longURL;
-  urlDatabase[shortURL].userID = userID;
+  urlDatabase[shortURL].userID = userID
+
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -228,7 +182,6 @@ app.post("/u/:shortURL", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
 
-  
   if (urlDatabase[shortURL].userID === req.session.user_id) {
     if(!urlDatabase[shortURL]) {
       res.status(403).send("URL does not exist, please try again");
@@ -245,11 +198,23 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const user = getUsersByEmail(email, users);
+
   if (user) {
     res.status(400).send("Email has already been taken, please use a different email.");
 
   } else {
-    const newUser = createNewUser(req);
+      const email = req.body.email;
+      const password = req.body.password;
+      const hashedPassword = bcrypt.hashSync(password, 10);
+      const ID = generateRandomString();
+      users[ID] = {
+        id: ID,
+        email: email,
+        hashedPassword: hashedPassword
+      }
+
+    const newUser = users[ID];
+    console.log(newUser.id);
     req.session.user_id = newUser.id;
     res.redirect("/urls");
   }
@@ -260,6 +225,7 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const user = getUsersByEmail(email, users);
   const password = req.body.password;
+
   if (!user) {
     return res.status(403).send("Email does not exist, please try again");
   }
@@ -275,11 +241,13 @@ app.post("/login", (req, res) => {
 
 //Logout
 app.post("/logout", (req, res) => {
+
   req.session = null;
   res.redirect("/login");
 });
 
 
 app.listen(PORT, () => {
+
   console.log(`Example app listening on port ${PORT}!`);
 });
