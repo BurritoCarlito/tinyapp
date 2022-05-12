@@ -5,26 +5,7 @@ TinyApp is a web application taht allows users to shortern long URLs, much like 
 
 The purpose of a URL shortener is to make a URL more manageable. By shortening a URL it makes it more shareable and even more customisable.
 
-## Instructions
-
-Step 1:
-To start the web application you will need to install all the dependencies: 
-
-- Node.js
-- Express
-- EJS
-- body-parser
-- cookie-parser
-- cookie-session
-- bcrypt
-
-Step 2:
-After installation of all the dependencies you can start the web server by using the "npm start" command in terminal.
-
-Step 3:
-Launch your preferred web browser and enter the following URL: http://localhost:8080/urls.
-
-## Features
+## Final Product
 
 ![tinyapp.gif](https://user-images.githubusercontent.com/95609843/167993675-e8f8df97-8831-418c-8810-17c9f2eccedb.png)
 
@@ -45,5 +26,25 @@ Launch your preferred web browser and enter the following URL: http://localhost:
 ![tinyapp.gif](https://user-images.githubusercontent.com/95609843/167993712-01e7f35c-c4fa-49e7-b4c8-2183c13a8a60.png)
 
 5. Will be able to edit and delete any one of your short URL's.
+
+
+## Instructions
+
+Step 1:
+To start the web application you will need to install all the dependencies: 
+
+- Node.js
+- Express
+- EJS
+- body-parser
+- cookie-parser
+- cookie-session
+- bcrypt
+
+Step 2:
+After installation of all the dependencies you can start the web server by (using the `npm start` command in terminal.
+
+Step 3:
+Launch your preferred web browser and enter the following URL: http://localhost:8080/urls.
 
 
