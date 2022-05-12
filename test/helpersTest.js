@@ -25,6 +25,13 @@ describe('getUsersByEmail', () => {
   it('should return user when given an valid email', () => {
     const user = getUsersByEmail("user2@example.com", testUsers);
     const expectedUserID = "user2RandomID";
-    assert.deepEqual(user.id, expectedUserID);
+    assert.strictEqual(user.id, expectedUserID);
   });
+
+  it('should return undefined when an invalid email', () => {
+    const user = getUsersByEmail("example3@example.com", testUsers);
+    const expectedUserID = undefined;
+    console.log(user.id);
+    assert.strictEqual(user.id, expectedUserID);
+  })
 });
