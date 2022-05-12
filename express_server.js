@@ -51,14 +51,13 @@ function createNewUser(req) {
     email: email,
     hashedPassword: hashedPassword
   };
-  console.log("helper", users[ID]);
   return users[ID];
 }
 
 // helper function
-function checkEmailExists(newEmail) {
+function getUsersByEmail(email, users) {
   for (let user in users) {
-    if (users[user]["email"] === newEmail) {
+    if (users[user]["email"] === email) {
       return users[user];
     }
   }
@@ -80,6 +79,8 @@ function urlsForUser(userID, urlDatabase) {
   return usersURL;
 }
 
+
+
 /*-- GET REQUESTS --*/
 
 app.get("/hello", (req, res) => {
@@ -94,7 +95,6 @@ app.get("/", (req, res) => {
 //gets a route for urls index page
 app.get("/urls", (req, res) => {
   const urls = urlsForUser(req.session.user_id, urlDatabase);
-  console.log(urls);
     const templateVars = {
       userID: req.session.user_id,
       urls: urls,
@@ -226,8 +226,9 @@ app.post("/u/:shortURL", (req, res) => {
 
 // Delete
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const { shortURL } = req.params.shortURL;
+  const shortURL = req.params.shortURL;
 
+  
   if (urlDatabase[shortURL].userID === req.session.user_id) {
     if(!urlDatabase[shortURL]) {
       res.status(403).send("URL does not exist, please try again");
@@ -242,7 +243,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //Registering a new User
 app.post("/register", (req, res) => {
-  const { user } = checkEmailExists(req.body.email);
+  const email = req.body.email;
+  const user = getUsersByEmail(email, users);
   if (user) {
     res.status(400).send("Email has already been taken, please use a different email.");
 
@@ -256,7 +258,7 @@ app.post("/register", (req, res) => {
 //Login
 app.post("/login", (req, res) => {
   const email = req.body.email;
-  const user = checkEmailExists(email);
+  const user = getUsersByEmail(email, users);
   const password = req.body.password;
   if (!user) {
     return res.status(403).send("Email does not exist, please try again");
