@@ -1,4 +1,4 @@
-<h1> TinyApp <h1>
+<h5> TinyApp <h5>
 
 TinyApp is a web application taht allows users to shortern long URLs, much like TinyUrl.com and bit.ly do. 
 
