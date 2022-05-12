@@ -1,8 +1,8 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const cookieSession = require("cookie-session");
+const express = require('express');
+const bodyParser = require('body-parser');
+const cookieSession = require('cookie-session');
 const { render } = require("ejs");
-const bcrypt = require("bcryptjs");
+const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = 8080;
 
@@ -18,12 +18,12 @@ const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
     userID: "bob",
-    password: "purple-monkey-dinosaur"
+    password: "123apple"
   },
   "9sm5xK": {
     longURL: "http://www.google.com",
     userID: "bill",
-    password: "blue-dinosaur-monkey"
+    password: "123banana"
   }
 };
 
@@ -49,12 +49,11 @@ function createNewUser(req) {
   users[ID] = {
     id: ID,
     email: email,
-    hasedPassword: hashedPassword
+    hashedPassword: hashedPassword
   };
   console.log("helper", users[ID]);
   return users[ID];
 }
-
 
 // helper function
 function checkEmailExists(newEmail) {
@@ -67,7 +66,7 @@ function checkEmailExists(newEmail) {
 }
 
 function checkPassword(users, newPassword) {
-  return bcrypt.compare(newPassword, users.hashedPassword);
+  return bcrypt.compare(newPassword, users.password);
 }
 
 // helper function
@@ -94,18 +93,14 @@ app.get("/", (req, res) => {
 
 //gets a route for urls index page
 app.get("/urls", (req, res) => {
-  const userID = req.session.user_id;
-  const user = users[userID];
-  if (!user) {
-    res.status(400).send("Please login to gain access.")
-  } else {
+  const urls = urlsForUser(req.session.user_id, urlDatabase);
+  console.log(urls);
     const templateVars = {
-      urls: urlsForUser(userID, urlDatabase),
       userID: req.session.user_id,
-      user: users[req.session.user_id],
+      urls: urls,
+      user: users[req.session.user_id]
     };
     res.render("urls_index", templateVars);
-  }
 });
 
 // GET route for the creating a new shortURL page
@@ -126,7 +121,7 @@ app.get("/urls/new", (req, res) => {
 // renders individual URL details
 app.get("/urls/:shortURL", (req, res) => {
   const { shortURL } = req.params;
-  const { userID } = req.session["user_id"];
+  const { userID } = req.session.user_id;
 
   const templateVars = {
     shortURL: shortURL,
@@ -144,7 +139,6 @@ app.get("/urls.json", (req, res) => {
 
 // GET endpoint - redirects to longURLS
 app.get("/u/:shortURL", (req, res) => {
-  
   if (!urlDatabase[req.params.shortURL]) {
     res.status(400).send("shortURL does not exist.")
   } else {
@@ -233,13 +227,16 @@ app.post("/u/:shortURL", (req, res) => {
 // Delete
 app.post("/urls/:shortURL/delete", (req, res) => {
   const { shortURL } = req.params.shortURL;
-  const { userID } = req.session.user_id;
 
-  if (userID !== urlDatabase[shortURL].userID) {
-      res.status(403).send("You are not logged in. Please log in to edit.");
+  if (urlDatabase[shortURL].userID === req.session.user_id) {
+    if(!urlDatabase[shortURL]) {
+      res.status(403).send("URL does not exist, please try again");
     } else {
       delete urlDatabase[shortURL];
       res.status(301).redirect("/urls");
+    }
+  } else {
+    res.status(400).send("Unable to delete URL that does not belong to you.")
   }
 });
 
@@ -251,30 +248,32 @@ app.post("/register", (req, res) => {
 
   } else {
     const newUser = createNewUser(req);
-    res.cookie("user_id", newUser.id);
+    req.session.user_id = newUser.id;
     res.redirect("/urls");
   }
 });
 
 //Login
 app.post("/login", (req, res) => {
-  const user = checkEmailExists(req.body.email, users);
-  const correctPassword = checkPassword(user, req.body.password);
-  if (user) {
-    if (correctPassword) {
-      res.cookie("user_id", user.id);
-      res.redirect("/urls");
-    } else {
-      res.status(403).send("Password is Incorrect, please try again");
-    }
-  } else {
-    res.status(403).send("Email cannot be found, please try again");
+  const email = req.body.email;
+  const user = checkEmailExists(email);
+  const password = req.body.password;
+  if (!user) {
+    return res.status(403).send("Email does not exist, please try again");
   }
+  console.log(password, user);
+    if (bcrypt.compareSync(password, user.hashedPassword)) {
+      req.session.user_id = user.id;
+      res.redirect("/urls");
+      return;
+    } else {
+      return res.status(403).send("Incorrect Password, please try again.")
+    }
 });
 
 //Logout
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/login");
 });
 
