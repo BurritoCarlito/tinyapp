@@ -50,9 +50,9 @@ app.get("/urls", (req, res) => {
   const urls = urlsForUser(req.session.user_id, urlDatabase);
 
     const templateVars = {
-      userID: req.session.user_id,
       urls: urls,
-      user: users[req.session.user_id]
+      user: users[req.session.user_id],
+      userID: req.session.user_id,
     };
 
     res.render("urls_index", templateVars);
@@ -61,11 +61,14 @@ app.get("/urls", (req, res) => {
 // GET route for the creating a new shortURL page
 app.get("/urls/new", (req, res) => {
   const userID = req.session.user_id;
+
   if (userID) {
+
     const templateVars = {
       urls: urlDatabase,
       userID: req.session.user_id,
       user: users[req.session.user_id]
+
     };
     res.render("urls_new", templateVars);
   } else {
@@ -82,13 +85,15 @@ app.get("/urls/:shortURL", (req, res) => {
     shortURL: shortURL,
     longURL: urlDatabase[shortURL].longURL,
     user: users[req.session.user_id],
-    userID: req.session.user_id,
+    userID: req.session.user_id
+
   };
     res.render("urls_show", templateVars);
 });
 
 //server sends a JSON response
 app.get("/urls.json", (req, res) => {
+  
   res.json(urlDatabase);
 });
 
