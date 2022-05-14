@@ -42,7 +42,7 @@ app.get("/hello", (req, res) => {
 // server sends a response
 app.get("/", (req, res) => {
 
-  res.send("Hello!");
+  res.redirect("urls");
 });
 
 //gets a route for urls index page
@@ -72,23 +72,27 @@ app.get("/urls/new", (req, res) => {
     };
     res.render("urls_new", templateVars);
   } else {
-    res.redirect("/login");
+    res.redirect("/urls");
   }
 });
 
 // renders individual URL details
 app.get("/urls/:shortURL", (req, res) => {
   const { shortURL } = req.params;
-  const { userID } = req.session.user_id;
-
+  const userID  = req.session.user_id;
+  
+  if (userID === urlDatabase[shortURL].userID) {
+    
   const templateVars = {
     shortURL: shortURL,
     longURL: urlDatabase[shortURL].longURL,
     user: users[req.session.user_id],
     userID: req.session.user_id
-
   };
-    res.render("urls_show", templateVars);
+  res.render("urls_show", templateVars);
+  } else {
+    res.status(400).send("Access denied, you do not have permission.")
+  }
 });
 
 //server sends a JSON response
@@ -99,16 +103,23 @@ app.get("/urls.json", (req, res) => {
 
 // GET endpoint - redirects to longURLS
 app.get("/u/:shortURL", (req, res) => {
-  if (!urlDatabase[req.params.shortURL]) {
-    res.status(400).send("shortURL does not exist.")
-  } else {
-    if (urlDatabase[req.params.shortURL].userID === req.session.user_id) {
+  const shortURL = req.params.shortURL;
+  if (urlDatabase[shortURL]) {
     const longURL = urlDatabase[req.params.shortURL].longURL;
     res.redirect(longURL);
   } else {
-    res.status(400).send("Access Denied, only able to view URL that you have created");
-    }
+    res.status(400).send("URL does not exist, please try again.")
   }
+  // if (!urlDatabase[req.params.shortURL]) {
+  //   res.status(400).send("shortURL does not exist.")
+  // } else {
+  //   if (urlDatabase[req.params.shortURL].userID === req.session.user_id) {
+  //   const longURL = urlDatabase[req.params.shortURL].longURL;
+  //   res.redirect(longURL);
+  // } else {
+  //   res.status(400).send("Access Denied, only able to view URL that you have created");
+  //   }
+  // }
 });
 
 //GET endpoint - request to /register
@@ -231,12 +242,13 @@ app.post("/login", (req, res) => {
   const user = getUsersByEmail(email, users);
   const password = req.body.password;
 
+  console.log(user);
   if (!user) {
     return res.status(403).send("Email does not exist, please try again");
   }
-  console.log(password, user);
     if (bcrypt.compareSync(password, user.hashedPassword)) {
       req.session.user_id = user.id;
+      console.log(user.id);
       res.redirect("/urls");
       return;
     } else {
